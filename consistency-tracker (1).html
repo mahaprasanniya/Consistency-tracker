@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pattu 💜 Consistency Tracker</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0d1117;
+      --card: #161b22;
+      --card2: #1a2030;
+      --border: rgba(255,255,255,0.07);
+      --accent: #7c5cbf;
+      --gold: #f5c842;
+      --green: #3ecf8e;
+      --red: #f56565;
+      --text: #e2e8f0;
+      --muted: #8b94a3;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 30px 16px 60px;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Starfield background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.4) 0%, transparent 100%),
+        radial-gradient(1px 1px at 80% 15%, rgba(255,255,255,0.3) 0%, transparent 100%),
+        radial-gradient(1px 1px at 55% 40%, rgba(255,255,255,0.25) 0%, transparent 100%),
+        radial-gradient(1px 1px at 25% 70%, rgba(255,255,255,0.3) 0%, transparent 100%),
+        radial-gradient(1px 1px at 90% 60%, rgba(255,255,255,0.2) 0%, transparent 100%),
+        radial-gradient(1px 1px at 40% 85%, rgba(255,255,255,0.35) 0%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 70% 90%, rgba(255,255,255,0.2) 0%, transparent 100%),
+        radial-gradient(1px 1px at 15% 50%, rgba(255,255,255,0.25) 0%, transparent 100%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .wrapper {
+      width: 100%;
+      max-width: 520px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── Header ── */
+    .header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    .header h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: 32px;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, #c084fc, #818cf8, #38bdf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .header p {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 6px;
+      letter-spacing: 0.5px;
+    }
+
+    /* ── Tree Panel ── */
+    .tree-panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 20px 16px 16px;
+      margin-bottom: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Ground glow */
+    .tree-panel::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 60px;
+      background: radial-gradient(ellipse at 50% 100%, rgba(62,207,142,0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .tree-scene {
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      height: 200px;
+      position: relative;
+    }
+
+    #tree-svg {
+      width: 220px;
+      height: 200px;
+      overflow: visible;
+    }
+
+    /* Leaf animation */
+    .leaf { transform-origin: center bottom; }
+    .leaf-left { animation: sway-l 3s ease-in-out infinite; }
+    .leaf-right { animation: sway-r 3.4s ease-in-out infinite; }
+
+    @keyframes sway-l {
+      0%,100% { transform: rotate(0deg); }
+      50% { transform: rotate(-4deg); }
+    }
+    @keyframes sway-r {
+      0%,100% { transform: rotate(0deg); }
+      50% { transform: rotate(4deg); }
+    }
+
+    /* Fruit bounce */
+    .fruit { animation: bounce-fruit 2s ease-in-out infinite; }
+    @keyframes bounce-fruit {
+      0%,100% { transform: translateY(0); }
+      50% { transform: translateY(-3px); }
+    }
+
+    /* Sparkle */
+    .sparkle {
+      animation: sparkle-anim 1.5s ease-in-out infinite;
+    }
+    @keyframes sparkle-anim {
+      0%,100% { opacity: 0; transform: scale(0.5); }
+      50% { opacity: 1; transform: scale(1.2); }
+    }
+
+    /* Stage label */
+    .stage-label {
+      text-align: center;
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 6px;
+    }
+    .stage-label b {
+      color: var(--green);
+      font-weight: 500;
+    }
+
+    /* ── Streak Row ── */
+    .streak-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .streak-card {
+      flex: 1;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 14px 12px;
+      text-align: center;
+    }
+    .streak-card .label {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 4px;
+    }
+    .streak-card .value {
+      font-family: 'Playfair Display', serif;
+      font-size: 34px;
+      line-height: 1;
+    }
+    .streak-card .value.fire { color: #fb923c; }
+    .streak-card .value.trophy { color: var(--gold); }
+    .streak-card .unit {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    /* ── Add habit ── */
+    .add-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .add-row input {
+      flex: 1;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px 16px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .add-row input::placeholder { color: var(--muted); }
+    .add-row input:focus { border-color: var(--accent); }
+    .add-row button {
+      background: linear-gradient(135deg, #7c5cbf, #5b47a5);
+      border: none;
+      border-radius: 14px;
+      padding: 12px 18px;
+      color: #fff;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 500;
+      font-size: 15px;
+      cursor: pointer;
+      transition: transform 0.1s, box-shadow 0.2s;
+      box-shadow: 0 4px 14px rgba(124,92,191,0.35);
+    }
+    .add-row button:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(124,92,191,0.5); }
+    .add-row button:active { transform: translateY(0); }
+
+    /* ── Habit list ── */
+    .section-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .habit-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px 14px;
+      margin-bottom: 8px;
+      transition: border-color 0.2s, background 0.2s;
+      animation: slide-in 0.3s ease;
+    }
+    @keyframes slide-in {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .habit-item.done {
+      border-color: rgba(62,207,142,0.3);
+      background: rgba(62,207,142,0.05);
+    }
+
+    .check-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.15);
+      background: transparent;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.2s;
+    }
+    .check-btn:hover { border-color: var(--green); }
+    .check-btn.checked {
+      background: var(--green);
+      border-color: var(--green);
+    }
+    .check-btn svg { width: 16px; height: 16px; }
+
+    .habit-info { flex: 1; min-width: 0; }
+    .habit-name {
+      font-size: 15px;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .habit-done-text {
+      done: none;
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+    .habit-done-text.green { color: var(--green); }
+
+    .del-btn {
+      background: transparent;
+      border: 1px solid rgba(245,101,101,0.2);
+      border-radius: 10px;
+      width: 30px;
+      height: 30px;
+      color: rgba(245,101,101,0.6);
+      cursor: pointer;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+    .del-btn:hover { border-color: var(--red); color: var(--red); background: rgba(245,101,101,0.08); }
+
+    .empty-state {
+      text-align: center;
+      color: var(--muted);
+      font-size: 14px;
+      padding: 20px 0;
+    }
+    .empty-state span { font-size: 28px; display: block; margin-bottom: 8px; }
+
+    /* Progress bar */
+    .progress-wrap {
+      background: rgba(255,255,255,0.06);
+      border-radius: 99px;
+      height: 6px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #3ecf8e, #06b6d4);
+      border-radius: 99px;
+      transition: width 0.5s ease;
+    }
+    .progress-label {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+    }
+  </style>
+</head>
+<body>
+<div class="wrapper">
+
+  <div class="header">
+    <h1>Pattu's Garden 🌱</h1>
+    <p>Complete all habits daily · Watch your tree grow</p>
+  </div>
+
+  <!-- Tree -->
+  <div class="tree-panel">
+    <div class="tree-scene">
+      <svg id="tree-svg" viewBox="0 0 220 200" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <radialGradient id="soil-g" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#3d2b1f"/>
+            <stop offset="100%" stop-color="#1a1008"/>
+          </radialGradient>
+          <radialGradient id="pot-g" cx="30%" cy="30%" r="70%">
+            <stop offset="0%" stop-color="#7c5cbf"/>
+            <stop offset="100%" stop-color="#3b1e8e"/>
+          </radialGradient>
+          <filter id="glow">
+            <feGaussianBlur stdDeviation="2.5" result="coloredBlur"/>
+            <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <filter id="shadow">
+            <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="rgba(0,0,0,0.4)"/>
+          </filter>
+        </defs>
+
+        <!-- Ground shadow -->
+        <ellipse cx="110" cy="196" rx="55" ry="6" fill="rgba(0,0,0,0.3)"/>
+
+        <!-- Pot body -->
+        <path d="M78 178 L82 198 L138 198 L142 178 Z" fill="url(#pot-g)" filter="url(#shadow)"/>
+        <!-- Pot rim -->
+        <rect x="74" y="173" width="72" height="9" rx="4" fill="#6d4fc7"/>
+        <!-- Soil -->
+        <ellipse cx="110" cy="177" rx="33" ry="5" fill="url(#soil-g)"/>
+
+        <!-- Dynamic tree group — filled by JS -->
+        <g id="tree-g"></g>
+      </svg>
+    </div>
+    <div class="stage-label" id="stage-label">Add habits and start your streak!</div>
+  </div>
+
+  <!-- Streaks -->
+  <div class="streak-row">
+    <div class="streak-card">
+      <div class="label">🔥 Streak</div>
+      <div class="value fire" id="cur-val">0</div>
+      <div class="unit">days</div>
+    </div>
+    <div class="streak-card">
+      <div class="label">🏆 Best</div>
+      <div class="value trophy" id="best-val">0</div>
+      <div class="unit">days</div>
+    </div>
+  </div>
+
+  <!-- Add -->
+  <div class="add-row">
+    <input id="inp" placeholder="e.g. Drink water, Read 10 mins…" />
+    <button onclick="addHabit()">+ Add</button>
+  </div>
+
+  <!-- Today's progress -->
+  <div class="progress-label">
+    <span>Today's progress</span>
+    <span id="prog-txt">0 / 0</span>
+  </div>
+  <div class="progress-wrap">
+    <div class="progress-fill" id="prog-bar" style="width:0%"></div>
+  </div>
+
+  <!-- Habit list -->
+  <div class="section-title">Today's Habits</div>
+  <div id="list"></div>
+
+</div>
+
+<script>
+  const inp = document.getElementById('inp');
+  const listEl = document.getElementById('list');
+  const curEl = document.getElementById('cur-val');
+  const bestEl = document.getElementById('best-val');
+  const treeG = document.getElementById('tree-g');
+  const stageLabel = document.getElementById('stage-label');
+  const progBar = document.getElementById('prog-bar');
+  const progTxt = document.getElementById('prog-txt');
+
+  let data = JSON.parse(localStorage.getItem('pattu-v2') || '{"habits":[],"best":0}');
+  let habits = data.habits || [];
+  let best = data.best || 0;
+
+  const today = () => new Date().toISOString().slice(0, 10);
+
+  function save() {
+    localStorage.setItem('pattu-v2', JSON.stringify({ habits, best }));
+  }
+
+  inp.addEventListener('keydown', e => { if (e.key === 'Enter') addHabit(); });
+
+  function addHabit() {
+    const name = inp.value.trim();
+    if (!name) return;
+    habits.push({ id: Date.now(), name, dates: [] });
+    inp.value = '';
+    save(); render();
+  }
+
+  function toggle(id) {
+    const t = today();
+    habits = habits.map(h => {
+      if (h.id !== id) return h;
+      const done = h.dates.includes(t);
+      return { ...h, dates: done ? h.dates.filter(d => d !== t) : [...h.dates, t] };
+    });
+    save(); render();
+  }
+
+  function removeHabit(id) {
+    habits = habits.filter(h => h.id !== id);
+    save(); render();
+  }
+
+  function allDone(date) {
+    return habits.length > 0 && habits.every(h => h.dates.includes(date));
+  }
+
+  function currentStreak() {
+    let s = 0, d = new Date();
+    while (true) {
+      const k = d.toISOString().slice(0, 10);
+      if (allDone(k)) { s++; d.setDate(d.getDate() - 1); } else break;
+    }
+    return s;
+  }
+
+  /* ───────────── BEAUTIFUL TREE ───────────── */
+  function drawTree(streak) {
+    treeG.innerHTML = '';
+
+    if (habits.length === 0 || streak === 0) {
+      // Tiny seed
+      const seed = `
+        <ellipse cx="110" cy="172" rx="6" ry="4" fill="#6d4fc7" opacity="0.7"/>
+        <text x="110" y="165" text-anchor="middle" font-size="9" fill="#8b94a3">seed</text>`;
+      treeG.innerHTML = seed;
+      stageLabel.innerHTML = 'Plant a seed — start your first streak!';
+      return;
+    }
+
+    const stage = streak <= 2 ? 'sprout' :
+                  streak <= 5 ? 'sapling' :
+                  streak <= 10 ? 'young' :
+                  streak <= 20 ? 'mature' : 'ancient';
+
+    const cx = 110;
+    const trunkBase = 172;
+
+    /* ── 1. TRUNK ── */
+    const trunkH = Math.min(20 + streak * 7, 130);
+    const trunkW = stage === 'sprout' ? 4 :
+                   stage === 'sapling' ? 6 :
+                   stage === 'young' ? 9 :
+                   stage === 'mature' ? 12 : 15;
+
+    // Trunk gradient via rect trick
+    const trunkTop = trunkBase - trunkH;
+    const tw2 = trunkW / 2;
+    let trunk = `
+      <rect x="${cx - tw2}" y="${trunkTop}" width="${trunkW}" height="${trunkH}"
+            rx="${tw2}" fill="#5c3d1e"/>`;
+
+    // Bark lines
+    if (streak > 5) {
+      for (let i = 0; i < 3; i++) {
+        const y = trunkTop + (trunkH / 4) * (i + 1);
+        trunk += `<line x1="${cx - tw2 + 1}" y1="${y}" x2="${cx + tw2 - 1}" y2="${y + 4}"
+                        stroke="#7a5230" stroke-width="1" opacity="0.5"/>`;
+      }
+    }
+
+    treeG.innerHTML += trunk;
+
+    /* ── 2. CANOPY LAYERS ── */
+    const layers = Math.min(1 + Math.floor(streak / 3), 5);
+    const baseY = trunkTop + 10;
+
+    // Color palette per stage
+    const darkLeaf  = stage === 'ancient' ? '#1a6b3c' : '#1e7a44';
+    const midLeaf   = stage === 'ancient' ? '#23934f' : '#27a256';
+    const lightLeaf = stage === 'ancient' ? '#2eb560' : '#3ecf8e';
+
+    for (let i = layers; i >= 0; i--) {
+      const ly = baseY + i * 22;
+      const rx = Math.max(12, 48 - i * 8);
+      const ry = Math.max(10, 28 - i * 4);
+
+      // Shadow layer
+      treeG.innerHTML += `<ellipse cx="${cx}" cy="${ly + 4}" rx="${rx * 0.9}" ry="${ry * 0.6}"
+                            fill="rgba(0,0,0,0.2)"/>`;
+
+      // Main blob — alternating shades
+      const fill = i % 3 === 0 ? darkLeaf : i % 3 === 1 ? midLeaf : lightLeaf;
+      treeG.innerHTML += `<ellipse cx="${cx}" cy="${ly}" rx="${rx}" ry="${ry}"
+                            fill="${fill}" class="leaf leaf-${i % 2 === 0 ? 'left' : 'right'}"
+                            filter="${streak > 15 ? 'url(#glow)' : ''}"/>`;
+
+      // Highlight blob
+      treeG.innerHTML += `<ellipse cx="${cx - rx * 0.25}" cy="${ly - ry * 0.3}"
+                            rx="${rx * 0.5}" ry="${ry * 0.35}"
+                            fill="${lightLeaf}" opacity="0.3"/>`;
+    }
+
+    /* ── 3. BRANCHES (streak > 5) ── */
+    if (streak > 5) {
+      const branchPairs = Math.min(Math.floor((streak - 5) / 3), 3);
+      for (let b = 0; b < branchPairs; b++) {
+        const by = trunkTop + trunkH * (0.3 + b * 0.2);
+        const len = 18 + b * 4;
+        treeG.innerHTML += `
+          <line x1="${cx}" y1="${by}" x2="${cx - len}" y2="${by - 10}"
+                stroke="#5c3d1e" stroke-width="${3 - b}" stroke-linecap="round"/>
+          <line x1="${cx}" y1="${by}" x2="${cx + len}" y2="${by - 10}"
+                stroke="#5c3d1e" stroke-width="${3 - b}" stroke-linecap="round"/>
+        `;
+        // Mini leaf clusters on branches
+        treeG.innerHTML += `
+          <ellipse cx="${cx - len - 4}" cy="${by - 14}" rx="10" ry="7" fill="${midLeaf}" opacity="0.85" class="leaf leaf-left"/>
+          <ellipse cx="${cx + len + 4}" cy="${by - 14}" rx="10" ry="7" fill="${midLeaf}" opacity="0.85" class="leaf leaf-right"/>
+        `;
+      }
+    }
+
+    /* ── 4. FRUITS (streak > 10) ── */
+    if (streak > 10) {
+      const fruitCount = Math.min(Math.floor((streak - 10) / 2), 8);
+      const fruitPositions = [
+        [-28, baseY + 8], [28, baseY + 8],
+        [-18, baseY + 26], [18, baseY + 26],
+        [-32, baseY + 22], [32, baseY + 22],
+        [0, baseY - 4], [-8, baseY + 40]
+      ];
+      for (let f = 0; f < fruitCount; f++) {
+        const [fx, fy] = fruitPositions[f];
+        const isApple = f % 2 === 0;
+        const color = isApple ? '#f87171' : '#fbbf24';
+        treeG.innerHTML += `
+          <circle cx="${cx + fx}" cy="${fy}" r="5" fill="${color}"
+                  class="fruit" style="animation-delay:${f * 0.3}s" filter="url(#shadow)"/>
+          <line x1="${cx + fx}" y1="${fy - 5}" x2="${cx + fx + 2}" y2="${fy - 9}"
+                stroke="#5c3d1e" stroke-width="1.5" stroke-linecap="round"/>
+        `;
+      }
+    }
+
+    /* ── 5. FLOWERS (streak 4-10) ── */
+    if (streak >= 4 && streak <= 12) {
+      const flowerData = [
+        [-22, baseY + 12, '#f9a8d4'],
+        [24, baseY + 15, '#c4b5fd'],
+        [10, baseY + 30, '#fde68a'],
+      ];
+      flowerData.slice(0, Math.min(streak - 3, 3)).forEach(([fx, fy, col]) => {
+        treeG.innerHTML += `
+          <circle cx="${cx + fx}" cy="${fy}" r="3.5" fill="${col}" opacity="0.9" class="fruit"
+                  style="animation-delay:${Math.random().toFixed(1)}s"/>
+          <circle cx="${cx + fx}" cy="${fy}" r="1.2" fill="#fff" opacity="0.9"/>
+        `;
+      });
+    }
+
+    /* ── 6. SPARKLES (streak > 20) ── */
+    if (streak > 20) {
+      const spPos = [[-35, baseY], [38, baseY + 10], [0, baseY - 15], [-15, baseY + 35]];
+      spPos.forEach(([sx, sy], i) => {
+        treeG.innerHTML += `
+          <text x="${cx + sx}" y="${sy}" text-anchor="middle" font-size="10"
+                class="sparkle" style="animation-delay:${i * 0.4}s">✨</text>`;
+      });
+    }
+
+    /* ── 7. BIRDS (streak > 15) ── */
+    if (streak > 15) {
+      treeG.innerHTML += `
+        <path d="M72 45 Q75 42 78 45" stroke="#94a3b8" stroke-width="1.5" fill="none"/>
+        <path d="M62 55 Q65 52 68 55" stroke="#94a3b8" stroke-width="1.5" fill="none"/>
+      `;
+    }
+
+    // Stage label
+    const labels = {
+      sprout:  `<b style="color:#86efac">🌱 Sprout</b> — ${streak} day${streak>1?'s':''}! Keep going!`,
+      sapling: `<b style="color:#4ade80">🌿 Sapling</b> — ${streak} days strong!`,
+      young:   `<b style="color:#3ecf8e">🌳 Young Tree</b> — ${streak} days! Fruits coming soon!`,
+      mature:  `<b style="color:#f5c842">🍎 Mature Tree</b> — ${streak} days! Beautiful!`,
+      ancient: `<b style="color:#c084fc">🌟 Ancient Tree</b> — ${streak} days! Legendary!`,
+    };
+    stageLabel.innerHTML = labels[stage];
+  }
+  /* ──────────────────────────────────────── */
+
+  function render() {
+    listEl.innerHTML = '';
+    const t = today();
+    const doneTodayCount = habits.filter(h => h.dates.includes(t)).length;
+
+    // Progress
+    const pct = habits.length ? Math.round((doneTodayCount / habits.length) * 100) : 0;
+    progBar.style.width = pct + '%';
+    progTxt.textContent = `${doneTodayCount} / ${habits.length}`;
+
+    if (habits.length === 0) {
+      listEl.innerHTML = `<div class="empty-state"><span>🪴</span>Add your first habit above!</div>`;
+    } else {
+      habits.forEach(h => {
+        const done = h.dates.includes(t);
+        const div = document.createElement('div');
+        div.className = 'habit-item' + (done ? ' done' : '');
+        div.innerHTML = `
+          <button class="check-btn ${done ? 'checked' : ''}" onclick="toggle(${h.id})">
+            ${done ? `<svg viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 8 6.5 11.5 13 5"/>
+            </svg>` : ''}
+          </button>
+          <div class="habit-info">
+            <div class="habit-name">${h.name}</div>
+            <div class="habit-done-text ${done ? 'green' : ''}">${done ? '✅ Done for today' : '⬜ Tap to complete'}</div>
+          </div>
+          <button class="del-btn" onclick="removeHabit(${h.id})">✕</button>
+        `;
+        listEl.appendChild(div);
+      });
+    }
+
+    const cur = currentStreak();
+    if (cur > best) { best = cur; save(); }
+    curEl.textContent = cur;
+    bestEl.textContent = best;
+
+    drawTree(cur);
+  }
+
+  // Midnight refresh
+  const now = new Date();
+  const next = new Date(now); next.setHours(24, 0, 0, 0);
+  setTimeout(() => location.reload(), next - now);
+
+  render();
+</script>
+</body>
+</html>
